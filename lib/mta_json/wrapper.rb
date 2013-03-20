@@ -15,12 +15,14 @@ module MtaJson
     METHOD = 'REQUEST_METHOD'.freeze
     POST = 'POST'.freeze
     PATH_INFO = 'PATH_INFO'.freeze
+    IP = 'REMOTE_ADDR'.freeze
 
     # HTTP-Response-Headers
     CONTENT_LENGTH = 'Content-Length'.freeze
 
     # Allowed Methods to be set by MTA
-    ALLOWED_METHODS = %w(POST GET PUT DELETE)
+    ALLOWED_METHODS = %w(GET)
+    ALLOWED_METHODS_PRIVATE = %w(POST PUT DELETE)
 
     def initialize app
       @app = app
@@ -65,6 +67,8 @@ module MtaJson
         # optional options!
         update_options env, json[1].with_indifferent_access if json.size >= 2
 
+        verify_request_method env
+
         # any parameters given? otherwise we don't really care for any params
         update_params env, json[0] if json.size >= 1 and json[0] != 0 # 0 is nil in terms of callRemote. JSON has 'null' though!
 
@@ -98,10 +102,19 @@ module MtaJson
       env[FORM_INPUT] = env[BODY]
     end
 
+    # make sure the request came from a whitelisted ip, or uses a publically accessible request method
+    def verify_request_method env
+      allowed = ALLOWED_METHODS
+      allowed |= ALLOWED_METHODS_PRIVATE if Railtie.config.mta_json.whitelist.include?(env[IP]) # TODO might need to revise this behing proxies
+      puts "Allowed: #{Railtie.config.mta_json.whitelist.to_s} -> #{env[IP]} :: #{allowed.to_s}, #{allowed.include?(env[METHOD])}"
+      if !allowed.include?(env[METHOD])
+        raise "Request method #{env[METHOD]} not allowed"
+      end
+    end
+
     # updates the options
     def update_options env, options
-      # switch between POST and GET?
-      if ALLOWED_METHODS.include?(options[:method])
+      if options[:method] and (ALLOWED_METHODS | ALLOWED_METHODS_PRIVATE).include?(options[:method])
         # (possibly) TODO - pass parameters for GET instead of POST in update_params then?
         # see https://github.com/rack/rack/blob/master/lib/rack/request.rb -> def GET
         env[METHOD] = options[:method]

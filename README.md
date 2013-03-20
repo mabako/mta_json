@@ -19,11 +19,21 @@ Or install it yourself as:
 
     $ gem install mta_json
 
----
+## Configuration
 
-You'll need to add the following line to your `config/application.rb`:
+### Whitelist for POST, PUT and DELETE
 
-    config.middleware.insert_before Rack::MethodOverride, MtaJson::Wrapper
+GET-requests are always processed.
+
+POST-, PUT- and DELETE-requests are handled via an ip whitelist. The only
+entry for this list is `127.0.0.1` per default.
+It can be **overwritten** with the following code in your `application.rb`:
+
+    config.mta_json.whitelist = %w(1.2.3.4 1.2.3.5)
+
+Or, to still allow requests from your local machine:
+
+    config.mta_json.whitelist = %w(1.2.3.4 1.2.3.5 127.0.0.1)
 
 ## Usage
 
@@ -129,4 +139,4 @@ A more complete example can be found in `examples/crud`.
 
   <pre>skip_before_filter :verify_authenticity_token, :only => :your_method</pre>
 
-* The code doesn't insert itself as middleware automatically, see Installation section.
+* running rails behind a proxy/load balancer and IP resolution?
