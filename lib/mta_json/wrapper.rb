@@ -2,7 +2,9 @@ module MtaJson
   # wraps calls to .mta-urls in a MTA-specific format.
   # The main difference is:
   # * the request body needs to have the surrounding [ ] removed (which technically represents a JSON-Array)
-  # * the response body needs [ ] added (again, a JSON-Array, except that we only ever return one element)
+  # * the response body needs [ ] added (again, a JSON-Array) which consists of:
+  #   * body of the response
+  #   * headers
   # MTA technically allows multiple parameters, but that doesn't really suit rails' named parameters (param[:cake]).
   class Wrapper
     # env[...]
@@ -18,7 +20,7 @@ module MtaJson
     CONTENT_LENGTH = 'Content-Length'.freeze
 
     # Allowed Methods to be set by MTA
-    ALLOWED_METHODS = %w(POST GET)
+    ALLOWED_METHODS = %w(POST GET PUT DELETE)
 
     def initialize app
       @app = app
@@ -74,7 +76,7 @@ module MtaJson
           # mta /can/ handle multiple parameters as response.
           # We do not want and/or need this, but merely wrap the response body in square brackets as to return a single element
           # If render :json => @obj is used in the controller, this should make exactly @obj available in MTA.
-          response = to_response(response)
+          response = to_response(response, headers)
 
           # overwrite the length if already set
           if headers['Content-Length']
@@ -106,13 +108,13 @@ module MtaJson
       end
     end
 
-    # returns the response body
-    def to_response response
+    # returns the response body: old response body + headers as a JSON array
+    def to_response response, headers
       body = ""
       response.each do |s|
         body << s.to_s
       end
-      ["[#{body}]"]
+      ["[#{body},#{headers.to_json.to_s}]"]
     end
   end
 end
