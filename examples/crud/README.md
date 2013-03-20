@@ -3,23 +3,8 @@
 
 Tests whether you can create, read, update and delete posts from MTA
 
-## Running the example
 
-Start the rails server:
-
-    $ cd rails
-    $ rails s
-
-Start the MTA Server and type the following commands:
-
-    $ aclrequest crud allow all
-    $ start crud
-
-After that, the following commands are available within MTA (console, in-game)
-
-* **/posts** - lists all posts
-
-## How this was built - in rails
+## Building a simple CRUD-based controller
 
 Creating the project:
 
@@ -38,3 +23,15 @@ Generating a model Post along with a matching Controller:
 Migrates the database to include the new posts table:
 
     $ rake db:migrate
+
+## Running the example
+
+Start the rails server:
+
+    $ cd rails
+    $ rails s
+
+Start the MTA Server and type the following commands:
+
+    $ aclrequest crud allow all
+    $ start crud
