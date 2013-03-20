@@ -97,7 +97,7 @@ returned by above Rails-specific example.
 
 Likewise to retrieve a single post:
 
-    callRemote('http://localhost/post/1.mta',
+    callRemote('http://localhost/posts/1.mta',
       function(post, err)
         if post ~= 'ERROR' then
           -- assumes your @post in rails has a 'text' attribute
@@ -109,6 +109,8 @@ Likewise to retrieve a single post:
       nil,
       {method = 'GET'}
     )
+
+A more complete example can be found in `examples/crud`.
 
 ## Contributing
 
