@@ -12,10 +12,12 @@ module MtaJson
     BODY = 'rack.input'.freeze
     FORM_INPUT = 'rack.request.form_input'.freeze
     FORM_HASH = 'rack.request.form_hash'.freeze
+    SESSION = 'rack.session'.freeze
     METHOD = 'REQUEST_METHOD'.freeze
     POST = 'POST'.freeze
     PATH_INFO = 'PATH_INFO'.freeze
     IP = 'REMOTE_ADDR'.freeze
+    CSRF_TOKEN = 'X-CSRF-Token'.freeze
 
     # HTTP-Response-Headers
     CONTENT_LENGTH = 'Content-Length'.freeze
@@ -72,6 +74,9 @@ module MtaJson
         # any parameters given? otherwise we don't really care for any params
         update_params env, json[0] if json.size >= 1 and json[0] != 0 # 0 is nil in terms of callRemote. JSON has 'null' though!
 
+        # add some CSRF info... maybe.
+        add_csrf_info env
+
         # call the other middlewares
         status, headers, response = @app.call(env)
 
@@ -95,39 +100,48 @@ module MtaJson
       end
     end
 
-    # update all of the parameter-related values in the current request's environment
-    def update_params env, json
-      env[FORM_HASH] = json
-      env[BODY] = StringIO.new(Rack::Utils.build_query(json))
-      env[FORM_INPUT] = env[BODY]
-    end
+    private
+      # update all of the parameter-related values in the current request's environment
+      def update_params env, json
+        env[FORM_HASH] = json
+        env[BODY] = env[FORM_INPUT] = StringIO.new(Rack::Utils.build_query(json))
+      end
 
-    # make sure the request came from a whitelisted ip, or uses a publically accessible request method
-    def verify_request_method env
-      allowed = ALLOWED_METHODS
-      allowed |= ALLOWED_METHODS_PRIVATE if Railtie.config.mta_json.whitelist.include?(env[IP]) # TODO might need to revise this behing proxies
-      puts "Allowed: #{Railtie.config.mta_json.whitelist.to_s} -> #{env[IP]} :: #{allowed.to_s}, #{allowed.include?(env[METHOD])}"
-      if !allowed.include?(env[METHOD])
-        raise "Request method #{env[METHOD]} not allowed"
+      # make sure the request came from a whitelisted ip, or uses a publically accessible request method
+      def verify_request_method env
+        allowed = ALLOWED_METHODS
+        allowed |= ALLOWED_METHODS_PRIVATE if whitelisted?(env)
+        if !allowed.include?(env[METHOD])
+          raise "Request method #{env[METHOD]} not allowed"
+        end
+      end
+
+      # updates the options
+      def update_options env, options
+        if options[:method] and (ALLOWED_METHODS | ALLOWED_METHODS_PRIVATE).include?(options[:method])
+          # (possibly) TODO - pass parameters for GET instead of POST in update_params then?
+          # see https://github.com/rack/rack/blob/master/lib/rack/request.rb -> def GET
+          env[METHOD] = options[:method]
+        end
+      end
+
+      # adds csrf info to non-GET requests of whitelisted IPs
+      def add_csrf_info env
+        env[CSRF_TOKEN] = env[SESSION][:_csrf_token] = SecureRandom.base64(32).to_s if env[METHOD] != 'GET' and whitelisted?(env)
+      end
+
+      # TODO might need to revise this behing proxies
+      def whitelisted? env
+        Railtie.config.mta_json.whitelist.include?(env[IP])
+      end
+
+      # returns the response body: old response body + headers as a JSON array
+      def to_response response, headers
+        body = ""
+        response.each do |s|
+          body << s.to_s
+        end
+        ["[#{body},#{headers.to_json.to_s}]"]
       end
     end
-
-    # updates the options
-    def update_options env, options
-      if options[:method] and (ALLOWED_METHODS | ALLOWED_METHODS_PRIVATE).include?(options[:method])
-        # (possibly) TODO - pass parameters for GET instead of POST in update_params then?
-        # see https://github.com/rack/rack/blob/master/lib/rack/request.rb -> def GET
-        env[METHOD] = options[:method]
-      end
-    end
-
-    # returns the response body: old response body + headers as a JSON array
-    def to_response response, headers
-      body = ""
-      response.each do |s|
-        body << s.to_s
-      end
-      ["[#{body},#{headers.to_json.to_s}]"]
-    end
-  end
 end

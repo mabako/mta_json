@@ -134,9 +134,5 @@ A more complete example can be found in `examples/crud`.
 
 ## TODOs
 
-* Special care should be taken with the default POST method, there currently is
-  no way to set a CSRF-Token. This can be worked around by using:
-
-  <pre>skip_before_filter :verify_authenticity_token, :only => :your_method</pre>
-
-* running rails behind a proxy/load balancer and IP resolution?
+* running rails behind a proxy/load balancer and IP resolution together with
+  the whitelist?
