@@ -3,6 +3,8 @@
 Wraps MTA:SA's JSON format to support named parameters and different HTTP
 methods with callRemote.
 
+See [Multi Theft Auto: San Andreas](http://mtasa.com/).
+
 ## Installation
 
 Add this line to your application's Gemfile:
