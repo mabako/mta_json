@@ -8,8 +8,8 @@ Gem::Specification.new do |spec|
   spec.version       = MtaJson::VERSION
   spec.authors       = ["Marcus Bauer"]
   spec.email         = ["mabako@gmail.com"]
-  spec.description   = "Wraps calls by MTA's callRemote"
-  spec.summary       = "MTA-Wrapper for JSON"
+  spec.description   = "Wraps MTA:SA's JSON format to support named parameters and different HTTP Methods with callRemote"
+  spec.summary       = "Wrapper for MTA:SA's JSON format"
   spec.homepage      = "https://github.com/mabako/mta_json"
   spec.license       = "MIT"
 
