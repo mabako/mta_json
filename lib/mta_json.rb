@@ -1,5 +1,6 @@
 require "mta_json/version"
+require "mta_json/wrapper"
 
 module MtaJson
-  # Your code goes here...
+
 end
